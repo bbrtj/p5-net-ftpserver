@@ -30,6 +30,7 @@ Major features of Net::FTPServer include:
 * SITE EXEC (disabled by default).
 * Syslog logging.
 * Set TCP parameters.
+* SSL/TLS security
 
 Missing features:
 
@@ -72,6 +73,8 @@ optional:
                    to work correctly.
 
   File::Sync       Needed for SITE SYNC command.
+
+  IO::Socket::SSL  If you want SSL/TLS support.
 
   bzip2            If an external "bzip2" program is available,
                    it can be used to create archives
