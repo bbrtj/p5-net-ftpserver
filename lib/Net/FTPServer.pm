@@ -2498,6 +2498,10 @@ sub run
 	$self->_be_daemon;
       }
 
+    if ($self->{_test_mode}) {
+        $self->{_sock} = Net::FTPServer::TestIO->new;
+    }
+
     $| = 1;
 
     $self->log ("info", "in post accept stage") if $self->{debug};
@@ -8384,6 +8388,18 @@ sub endRead
       }
     return &Archive::Zip::AZ_OK;
   }
+
+#----------------------------------------------------------------------
+
+# This package is only here to make the tests work with the unified
+# socket $self->{_sock}
+
+package Net::FTPServer::TestIO;
+
+sub new     { bless {}, shift }
+sub getline { shift; <STDIN> }
+sub print   { shift; print @_ }
+
 
 1 # So that the require or use succeeds.
 
