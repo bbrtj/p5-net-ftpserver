@@ -106,6 +106,13 @@ my %modules
      'IO::Seekable' => { status => "required" },
      'IO::Select' => { status => "required", package => "IO" },
      'IO::Socket' => { status => "required", package => "IO" },
+     'IO::Socket::SSL' =>
+     { status => "optional",
+       version => "0.11",
+       message =>
+       "IO::Socket::SSL is missing. This module is required if you want to\n".
+       "enable SSL/TLS support.\n"
+     },
      'IPC::Open2' => { status => "required" },
      'Net::FTP' =>
      { status => "optional",
