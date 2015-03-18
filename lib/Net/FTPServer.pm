@@ -2161,7 +2161,7 @@ use strict;
 
 use vars qw($VERSION $RELEASE);
 
-$VERSION = '1.125';
+$VERSION = '1.125_03';
 $RELEASE = 1;
 
 # Non-optional modules.
