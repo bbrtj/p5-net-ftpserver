@@ -2204,6 +2204,7 @@ eval "use BSD::Resource;";
 eval "use Digest::MD5;";
 eval "use File::Sync;";
 eval "use IO::Socket::SSL";
+eval "use IO::Socket::SSL::Utils";
 
 # Global variables and constants.
 use vars qw(@_default_commands
@@ -2263,6 +2264,7 @@ $GOT_SIGURG  = 0;
 $GOT_SIGCHLD = 0;
 $GOT_SIGHUP  = 0;
 $GOT_SIGTERM = 0;
+
 
 =pod
 
@@ -2348,10 +2350,19 @@ sub run
     # include TLS features if SSL support available
     if ($self->config("enable ssl"))
       {
-        $self->{features}{AUTH} = 'TLS';
-        $self->{features}{PBSZ} = undef;
-        $self->{features}{PROT} = undef;
-        $self->{features}{CCC} = undef;
+        my $cert = $self->config("ssl cert file") || $self->config("ssl certificate file");
+        my $key = $self->config("ssl key file");
+	if ($cert && $key) {
+		$self->{_ssl_args} = {
+			SSL_cert => PEM_file2cert($cert),
+			SSL_key => PEM_file2key($key),
+		};
+
+		$self->{features}{AUTH} = 'TLS';
+		$self->{features}{PBSZ} = undef;
+		$self->{features}{PROT} = undef;
+		$self->{features}{CCC} = undef;
+	}
       }
 
     # Initialize Max Clients Settings
@@ -4473,12 +4484,9 @@ sub _AUTH_command
 
     # Accept the TLS session.
     $self->reply (234, "AUTH=$ucr");
-    my $cert = $self->config("ssl cert file") || $self->config("ssl certificate file");
-    my $key = $self->config("ssl key file");
     if (IO::Socket::SSL->start_SSL($self->{_sock},
 				   SSL_server => 1,
-				   SSL_cert_file => $cert,
-				   SSL_key_file => $key,
+				   %{$self->{_ssl_args}},
 				  ))
       {
 	$self->{tls_control} = 1;
@@ -4487,7 +4495,7 @@ sub _AUTH_command
     else
       {
 	# failed, what can we do?
-	die "Failed to start TLS " . IO::Socket::SSL::errstr();
+	die "Failed to start TLS: " . IO::Socket::SSL::errstr();
       }
   }
 
@@ -7646,12 +7654,9 @@ sub open_data_connection
     # Data connections are PROTected, enable SSL
     if ($self->{tls_data})
       {
-        my $cert = $self->config("ssl cert file") || $self->config("ssl certificate file");
-        my $key = $self->config("ssl key file");
-        if (IO::Socket::SSL->start_SSL($sock,
+        if ($self->{_ssl_args} && IO::Socket::SSL->start_SSL($sock,
                                        SSL_server => 1,
-                                       SSL_cert_file => $cert,
-                                       SSL_key_file => $key,
+					   %{$self->{_ssl_args}},
                                       ))
           {
             # yay, all good
@@ -7659,7 +7664,7 @@ sub open_data_connection
         else
           {
             # failed, what can we do?
-            die "Failed to start TLS connection"; # woot
+	die "Failed to start TLS connection: " . IO::Socket::SSL::errstr();
           }
       }
 
